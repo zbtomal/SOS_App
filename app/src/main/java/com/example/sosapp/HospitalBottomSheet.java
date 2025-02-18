@@ -1,7 +1,10 @@
 package com.example.sosapp;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.location.Location;
 import android.os.Bundle;
 import android.telephony.SmsManager;
 import android.view.LayoutInflater;
@@ -10,12 +13,19 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.Toast;
 
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
 
+
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 
 public class HospitalBottomSheet extends BottomSheetDialogFragment {
 
     private Button btnHospital1, btnHospital2, btnHospital3, btnHospital4, btnHospital5;
+    private FusedLocationProviderClient fusedLocationClient;
+    private Location currentLocation;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -28,11 +38,17 @@ public class HospitalBottomSheet extends BottomSheetDialogFragment {
         btnHospital4 = view.findViewById(R.id.btn_hospital_4);
         btnHospital5 = view.findViewById(R.id.btn_hospital_5);
 
+        // Initialize location client
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(getActivity());
+
         // Load hospital names and set them to buttons
         loadHospitalNames();
 
         // Set click listeners for each hospital button
         setupHospitalButtons();
+
+        // Get location
+        getLastKnownLocation();
 
         return view;
     }
@@ -74,9 +90,53 @@ public class HospitalBottomSheet extends BottomSheetDialogFragment {
             return;
         }
 
-        String message = "Emergency! I need an ambulance. My location: [your location here]";
+        // Check if location is available
+        if (currentLocation == null) {
+            Toast.makeText(getActivity(), "Location is not available, please try again.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Get the current location details (latitude and longitude)
+        double latitude = currentLocation.getLatitude();
+        double longitude = currentLocation.getLongitude();
+
+        String locationMessage = "Emergency! I need an ambulance. My location: http://maps.google.com/maps?q=" + latitude + "," + longitude;
+
         SmsManager smsManager = SmsManager.getDefault();
-        smsManager.sendTextMessage(hospitalPhoneNumber, null, message, null, null);
+        smsManager.sendTextMessage(hospitalPhoneNumber, null, locationMessage, null, null);
         Toast.makeText(getActivity(), "SMS sent to " + hospitalPhoneNumber, Toast.LENGTH_SHORT).show();
+    }
+
+    private void getLastKnownLocation() {
+        // Request location updates
+        if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // Request permission if not granted
+            ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 101);
+            return;
+        }
+
+        fusedLocationClient.getLastLocation()
+                .addOnSuccessListener(getActivity(), location -> {
+                    if (location != null) {
+                        currentLocation = location;
+                    } else {
+                        Toast.makeText(getActivity(), "Location is null", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .addOnFailureListener(e -> Toast.makeText(getActivity(), "Failed to get location", Toast.LENGTH_SHORT).show());
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == 101) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Retry getting location after permission is granted
+                getLastKnownLocation();
+            } else {
+                Toast.makeText(getActivity(), "Permission denied. Cannot get location.", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 }
