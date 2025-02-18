@@ -47,9 +47,11 @@ public class SaveContactsActivity extends AppCompatActivity {
         SharedPreferences sharedPreferences = getSharedPreferences("EmergencyContacts", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
 
-        for (int i = 0; i < 5; i++) {
-            editor.putString("hospital_name_" + i, hospitalNames[i].getText().toString());
-            editor.putString("hospital_number_" + i, hospitalNumbers[i].getText().toString());
+        for (int i = 1; i <= 5; i++) {
+            String hospitalName = hospitalNames[i-1].getText().toString().trim();
+            // Save the hospital name or a default value if the name is empty
+            editor.putString("hospital_name_" + i, hospitalName.isEmpty() ? "<Empty>" : hospitalName);
+            editor.putString("hospital_number_" + i, hospitalNumbers[i-1].getText().toString());
         }
 
         editor.putString("police_number", policeNumber.getText().toString());
@@ -63,9 +65,9 @@ public class SaveContactsActivity extends AppCompatActivity {
     private void loadSavedData() {
         SharedPreferences sharedPreferences = getSharedPreferences("EmergencyContacts", Context.MODE_PRIVATE);
 
-        for (int i = 0; i < 5; i++) {
-            hospitalNames[i].setText(sharedPreferences.getString("hospital_name_" + i, ""));
-            hospitalNumbers[i].setText(sharedPreferences.getString("hospital_number_" + i, ""));
+        for (int i = 1; i <=5; i++) {
+            hospitalNames[i-1].setText(sharedPreferences.getString("hospital_name_" + i, "<Empty>"));
+            hospitalNumbers[i-1].setText(sharedPreferences.getString("hospital_number_" + i, ""));
         }
 
         policeNumber.setText(sharedPreferences.getString("police_number", ""));
