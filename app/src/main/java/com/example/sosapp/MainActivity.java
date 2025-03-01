@@ -20,6 +20,20 @@ public class MainActivity extends AppCompatActivity {
             bottomSheet.show(getSupportFragmentManager(), bottomSheet.getTag());
         });
 
+        Button policeButton = findViewById(R.id.btn_police);
+        policeButton.setOnClickListener(v -> {
+            PoliceBottomSheet bottomSheet = new PoliceBottomSheet();
+            bottomSheet.show(getSupportFragmentManager(), bottomSheet.getTag());
+        });
+
+        Button fireServiceButton = findViewById(R.id.btn_fireservice);
+        fireServiceButton.setOnClickListener(v -> {
+            FireBottomSheet bottomSheet = new FireBottomSheet();
+            bottomSheet.show(getSupportFragmentManager(), bottomSheet.getTag());
+        });
+
+
+
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, SaveContactsActivity.class);
